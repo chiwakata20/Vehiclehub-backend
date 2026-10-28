@@ -1,18 +1,25 @@
 const winston = require("winston");
-require("winston-mongodb");
 
-module.exports = function () {
-  winston.handleExceptions(
-    new winston.transports.File({ filename: "uncaughtExceptions.log" }),
-  );
-
-  process.on("unhandledRejection", (ex) => {
-    throw ex;
-  });
-
-  winston.add(winston.transports.File, { filename: "logfile.log" });
-  winston.add(winston.transports.MongoDB, {
-    db: "mongodb://localhost/vehiclehub",
+module.exports = function configureLogging() {
+  winston.configure({
     level: "info",
+
+    format: winston.format.combine(
+      winston.format.timestamp(),
+      winston.format.errors({ stack: true }),
+      winston.format.json()
+    ),
+
+    transports: [
+      new winston.transports.Console(),
+    ],
+
+    exceptionHandlers: [
+      new winston.transports.Console(),
+    ],
+
+    rejectionHandlers: [
+      new winston.transports.Console(),
+    ],
   });
 };
