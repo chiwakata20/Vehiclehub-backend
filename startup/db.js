@@ -14,7 +14,7 @@ module.exports = function connectDB() {
     );
   }
 
-  if (!connectionPromise) {
+  if  (!connectionPromise) {
     connectionPromise = mongoose
       .connect(process.env.MONGODB_URI, {
         serverSelectionTimeoutMS: 10000,
