@@ -1,3 +1,4 @@
 {
-  "jwtPrivateKey": "Vehiclehub_jwtPrivateKey"
+  "jwtPrivateKey": "JWT_PRIVATE_KEY"
 }
+

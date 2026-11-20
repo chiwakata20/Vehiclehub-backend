@@ -1,30 +1,53 @@
-const winston = require("winston");
 const mongoose = require("mongoose");
 
-let connectionPromise;
+let connectionPromise = null;
 
-module.exports = function connectDB() {
+module.exports = function connectDatabase() {
+  // Reuse an established MongoDB connection.
   if (mongoose.connection.readyState === 1) {
-    return Promise.resolve(mongoose);
+    return Promise.resolve(mongoose.connection);
   }
 
-  if (!process.env.MONGODB_URI) {
+  const mongoUri = process.env.MONGODB_URI;
+
+  if (!mongoUri) {
     return Promise.reject(
-      new Error("MONGODB_URI environment variable is required.")
+      new Error("MONGODB_URI environment variable is missing")
     );
   }
 
-  if  (!connectionPromise) {
+  // Reuse the active connection attempt during concurrent requests.
+  if (!connectionPromise) {
+    console.log("Attempting MongoDB connection...");
+
     connectionPromise = mongoose
-      .connect(process.env.MONGODB_URI, {
+      .connect(mongoUri, {
         serverSelectionTimeoutMS: 10000,
       })
-      .then((connection) => {
-        winston.info("Connected to MongoDB...");
-        return connection;
+      .then(() => {
+        console.log("Connected to MongoDB Atlas");
+        return mongoose.connection;
       })
       .catch((error) => {
-        connectionPromise = undefined;
+        connectionPromise = null;
+
+        console.error("MongoDB connection failed:", {
+          name: error.name,
+          message: error.message,
+          code: error.code,
+        });
+
+        if (error.reason?.servers) {
+          for (const [address, server] of error.reason.servers.entries()) {
+            console.error("MongoDB server error:", {
+              address,
+              type: server.type,
+              message: server.error?.message,
+              code: server.error?.code,
+            });
+          }
+        }
+
         throw error;
       });
   }

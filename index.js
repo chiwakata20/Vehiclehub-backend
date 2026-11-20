@@ -1,7 +1,9 @@
 require("dotenv").config();
 
-const winston = require("winston");
 const express = require("express");
+const winston = require("winston");
+const corsMiddleware = require("./middleware/cors");
+const connectDB = require("./startup/db");
 
 const app = express();
 
@@ -9,17 +11,20 @@ require("./startup/logging")();
 require("./startup/config")();
 require("./startup/validation")();
 
-const connectDB = require("./startup/db");
+app.use(corsMiddleware);
 
-// Wait for MongoDB before processing requests.
-// Forward connection errors to your error-handling middleware.
-app.use((req, res, next) => {
-  connectDB().then(() => next()).catch(next);
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+  } catch (error) {
+    return next(error);
+  }
+
+  next();
 });
 
 require("./startup/routes")(app);
 
-// Start the server when running locally.
 if (require.main === module) {
   const port = process.env.PORT || 3000;
 
@@ -28,5 +33,4 @@ if (require.main === module) {
   });
 }
 
-// Allow Vercel to load the Express application.
 module.exports = app;
