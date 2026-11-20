@@ -16,6 +16,10 @@ app.use(corsMiddleware);
 app.use(async (req, res, next) => {
   try {
     await connectDB();
+    winston.error("MongoDB connection failed", {
+  errorName: error.name,
+  errorMessage: error.message,
+});
   } catch (error) {
     return next(error);
   }
